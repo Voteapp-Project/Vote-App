@@ -1,0 +1,117 @@
+openapi: 3.0.0
+info:
+  title: Voting System API
+  version: 1.0.0
+  description: API contract for secure electronic voting system
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+
+  /api/auth/request-otp:
+    post:
+      summary: Request OTP for login
+      description: Sends OTP after validating NIC
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              nic: "199812345678"
+              phoneNumber: "0771234567"
+      responses:
+        200:
+          description: OTP sent successfully
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "OTP sent successfully"
+        400:
+          description: NIC not registered
+
+  /api/auth/verify-otp:
+    post:
+      summary: Verify OTP and authenticate user
+      description: Validates OTP and returns JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              nic: "199812345678"
+              otpCode: "123456"
+      responses:
+        200:
+          description: OTP verified successfully
+          content:
+            application/json:
+              example:
+                status: "success"
+                token: "jwt-token"
+                districtId: 2
+                electionId: 1
+        400:
+          description: Invalid or expired OTP
+
+  /api/ballot/candidates:
+    get:
+      summary: Get candidates for ballot
+      description: Returns candidates grouped by party for logged-in user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Candidates fetched successfully
+          content:
+            application/json:
+              example:
+                - partyId: 10
+                  partyName: "National Democratic Front"
+                  symbolUrl: "url_to_logo"
+                  candidates:
+                    - candidateId: 101
+                      name: "Namal Perera"
+                      number: 1
+                    - candidateId: 102
+                      name: "Saman Kumara"
+                      number: 2
+        401:
+          description: Unauthorized (Invalid token)
+
+  /api/vote/cast:
+    post:
+      summary: Cast vote securely
+      description: Records a vote anonymously using ballot system
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              electionId: 1
+              districtId: 2
+              selectedPartyId: 10
+              preferences: [101, 102]
+      responses:
+        200:
+          description: Vote cast successfully
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "Vote cast securely and anonymously."
+        400:
+          description: Validation error (already voted / invalid input)
+        401:
+          description: Unauthorized
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
